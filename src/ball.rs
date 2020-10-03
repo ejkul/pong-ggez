@@ -7,6 +7,7 @@ use rand::Rng;
 pub struct Ball {
     pub loc: Point2<f32>,
     pub vel: Vector2<f32>,
+    pub rng: rand::ThreadRng,
 }
 
 impl Ball {
@@ -16,6 +17,7 @@ impl Ball {
         Ball {
             loc: Point2::new(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT / 2.0),
             vel: Vector2::new(5.0, 0.0),
+            rng,
         }
     }
     pub fn draw(&self, ctx: &mut Context) -> GameResult<()> {
@@ -50,7 +52,12 @@ impl Ball {
             && !(self.loc.y > paddle.loc.y + PADDLE_SIZE[1]
                 || paddle.loc.y > self.loc.y + BALL_SIZE)
         {
-            self.vel.x *= -1.0;
+            self.vel.x *= -1.05;
+            self.vel.y = if self.vel.y > 0.0 {
+                self.rng.gen_range(1.,5.)
+            } else {
+                -self.rng.gen_range(1., 5.)
+            }
         }
         Ok(())
     }
