@@ -11,10 +11,12 @@ pub const WINDOW_WIDTH: f32 = 800.0;
 pub const WINDOW_HEIGHT: f32 = 600.0;
 pub const BALL_SIZE: f32 = 10.0;
 pub const PADDLE_SIZE: [f32; 2] = [20.0, 60.0];
+pub const PADDLE_ACC: f32 = 5.0;
+pub const PADDLE_MAX_VEL: f32 = 5.0;
 
 fn main() -> GameResult {
     // Make a Context.
-    let (mut ctx, mut event_loop) = ContextBuilder::new("my_game", "Cool Game Author")
+    let (mut ctx, mut event_loop) = ContextBuilder::new("Pong", "Andrzej")
         .window_mode(ggez::conf::WindowMode::default().dimensions(WINDOW_WIDTH, WINDOW_HEIGHT))
         .build()
         .expect("aieee, could not create ggez context!");
@@ -67,6 +69,8 @@ impl EventHandler for Pong {
         // Update code here...
         self.ball.collides()?;
         self.ball.update()?;
+        self.paddles[0].update()?;
+        self.paddles[1].update()?;
         Ok(())
     }
 
@@ -78,7 +82,55 @@ impl EventHandler for Pong {
         self.paddles[1].draw(ctx)?;
         graphics::present(ctx)
     }
-    // fn key_down_event(ctx: &mut Context, keycode: KeyCode, _keymods: KeyMods, _repeat: bool) {
-
-    // }
+    fn key_down_event(
+        &mut self,
+        ctx: &mut Context,
+        keycode: ggez::event::KeyCode,
+        _keymods: ggez::event::KeyMods,
+        repeat: bool,
+    ) {
+        if !repeat {
+            match keycode {
+                ggez::event::KeyCode::W => {
+                    self.paddles[0].vel.y = std::cmp::min(
+                        (self.paddles[0].vel.y - PADDLE_ACC) as i32,
+                        -PADDLE_MAX_VEL as i32,
+                    ) as f32
+                }
+                ggez::event::KeyCode::S => {
+                    self.paddles[0].vel.y = std::cmp::max(
+                        (self.paddles[0].vel.y + PADDLE_ACC) as i32,
+                        PADDLE_MAX_VEL as i32,
+                    ) as f32
+                }
+                ggez::event::KeyCode::Up => {
+                    self.paddles[1].vel.y = std::cmp::min(
+                        (self.paddles[1].vel.y - PADDLE_ACC) as i32,
+                        -PADDLE_MAX_VEL as i32,
+                    ) as f32
+                }
+                ggez::event::KeyCode::Down => {
+                    self.paddles[1].vel.y = std::cmp::max(
+                        (self.paddles[1].vel.y + PADDLE_ACC) as i32,
+                        PADDLE_MAX_VEL as i32,
+                    ) as f32
+                }
+                _ => (),
+            }
+        }
+    }
+    fn key_up_event(
+        &mut self,
+        ctx: &mut Context,
+        keycode: ggez::event::KeyCode,
+        _keymods: ggez::event::KeyMods,
+    ) {
+        match keycode {
+            ggez::event::KeyCode::W => self.paddles[0].vel.y = 0.0,
+            ggez::event::KeyCode::S => self.paddles[0].vel.y = 0.0,
+            ggez::event::KeyCode::Up => self.paddles[1].vel.y = 0.0,
+            ggez::event::KeyCode::Down => self.paddles[1].vel.y = 0.0,
+            _ => (),
+        }
+    }
 }

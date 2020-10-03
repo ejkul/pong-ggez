@@ -14,7 +14,7 @@ impl Ball {
         println!("${:?}", rng.gen::<f32>());
         Ball {
             loc: Point2::new(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT / 2.0),
-            vel: Vector2::new(5.0, 5.0),
+            vel: Vector2::new(5.0, 0.0),
         }
     }
     pub fn draw(&self, ctx: &mut Context) -> GameResult<()> {

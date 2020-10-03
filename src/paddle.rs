@@ -1,5 +1,6 @@
-use crate::{BALL_SIZE, PADDLE_SIZE, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::{BALL_SIZE, PADDLE_MAX_VEL, PADDLE_SIZE, WINDOW_HEIGHT, WINDOW_WIDTH};
 use ggez::graphics::Mesh;
+use ggez::nalgebra as na;
 use ggez::nalgebra::{Point2, Vector2};
 use ggez::{graphics, Context, GameError, GameResult};
 
@@ -37,6 +38,18 @@ impl Paddle {
             graphics::BLACK,
         )?;
         graphics::draw(ctx, &paddle, (self.loc,))?;
+        Ok(())
+    }
+    pub fn update(&mut self) -> GameResult {
+        self.loc += self.vel;
+        if self.loc.y <= 0.0 {
+            self.loc.y = 0.0;
+            self.vel.y = 0.0;
+        }
+        if self.loc.y >= WINDOW_HEIGHT - PADDLE_SIZE[1] {
+            self.loc.y = WINDOW_HEIGHT - PADDLE_SIZE[1];
+            self.vel.y = 0.0;
+        }
         Ok(())
     }
 }
