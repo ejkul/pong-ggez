@@ -2,6 +2,7 @@ use crate::{BALL_SIZE, WINDOW_HEIGHT, WINDOW_WIDTH};
 use ggez::graphics::Mesh;
 use ggez::nalgebra::{Point2, Vector2};
 use ggez::{graphics, Context, GameError, GameResult};
+use rand::Rng;
 pub struct Ball {
     pub loc: Point2<f32>,
     pub vel: Vector2<f32>,
@@ -9,6 +10,8 @@ pub struct Ball {
 
 impl Ball {
     pub fn new() -> Ball {
+        let mut rng = rand::thread_rng();
+        println!("${:?}", rng.gen::<f32>());
         Ball {
             loc: Point2::new(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT / 2.0),
             vel: Vector2::new(5.0, 5.0),
@@ -28,10 +31,9 @@ impl Ball {
     }
     pub fn update(&mut self) -> GameResult<()> {
         self.loc = self.loc + self.vel;
-        self.collides();
         Ok(())
     }
-    pub fn collides(&mut self) {
+    pub fn collides(&mut self)-> GameResult<()> {
         // checl wall collision
         if self.loc.y >= WINDOW_HEIGHT - BALL_SIZE {
             self.vel.y = self.vel.y * -1.0;
@@ -40,5 +42,6 @@ impl Ball {
             self.vel.y = self.vel.y * -1.0;
             self.loc.y = 0.0;
         }
+        Ok(())
     }
 }
