@@ -1,8 +1,9 @@
-use crate::{BALL_SIZE, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::{Paddle, BALL_SIZE, PADDLE_SIZE, WINDOW_HEIGHT, WINDOW_WIDTH};
 use ggez::graphics::Mesh;
 use ggez::nalgebra::{Point2, Vector2};
 use ggez::{graphics, Context, GameError, GameResult};
 use rand::Rng;
+
 pub struct Ball {
     pub loc: Point2<f32>,
     pub vel: Vector2<f32>,
@@ -33,7 +34,7 @@ impl Ball {
         self.loc = self.loc + self.vel;
         Ok(())
     }
-    pub fn collides(&mut self)-> GameResult<()> {
+    pub fn collides_wall(&mut self) -> GameResult<()> {
         // checl wall collision
         if self.loc.y >= WINDOW_HEIGHT - BALL_SIZE {
             self.vel.y = self.vel.y * -1.0;
@@ -41,6 +42,15 @@ impl Ball {
         } else if self.loc.y <= 0.0 {
             self.vel.y = self.vel.y * -1.0;
             self.loc.y = 0.0;
+        }
+        Ok(())
+    }
+    pub fn collides_paddle(&mut self, paddle: Paddle) -> GameResult<()> {
+        if !(self.loc.x > paddle.loc.x + PADDLE_SIZE[0] || paddle.loc.x > self.loc.x + BALL_SIZE)
+            && !(self.loc.y > paddle.loc.y + PADDLE_SIZE[1]
+                || paddle.loc.y > self.loc.y + BALL_SIZE)
+        {
+            self.vel.x *= -1.0;
         }
         Ok(())
     }

@@ -4,6 +4,7 @@ use ggez::nalgebra as na;
 use ggez::nalgebra::{Point2, Vector2};
 use ggez::{graphics, Context, GameError, GameResult};
 
+#[derive(Clone, Copy)]
 pub struct Paddle {
     pub loc: Point2<f32>,
     pub vel: Vector2<f32>,

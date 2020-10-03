@@ -67,7 +67,9 @@ impl Pong {
 impl EventHandler for Pong {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         // Update code here...
-        self.ball.collides()?;
+        self.ball.collides_wall()?;
+        self.ball.collides_paddle(self.paddles[1])?;
+        self.ball.collides_paddle(self.paddles[0])?;
         self.ball.update()?;
         self.paddles[0].update()?;
         self.paddles[1].update()?;
