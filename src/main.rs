@@ -10,6 +10,7 @@ use crate::paddle::*;
 pub const WINDOW_WIDTH: f32 = 800.0;
 pub const WINDOW_HEIGHT: f32 = 600.0;
 pub const BALL_SIZE: f32 = 10.0;
+pub const BALL_SPEED: f32 = 5.;
 pub const PADDLE_SIZE: [f32; 2] = [20.0, 60.0];
 pub const PADDLE_ACC: f32 = 5.0;
 pub const PADDLE_MAX_VEL: f32 = 5.0;
@@ -38,7 +39,7 @@ fn main() -> GameResult {
         }
     }
 }
-
+#[derive(Clone, Copy)]
 pub enum State {
     Serve,
     Play,
@@ -63,18 +64,17 @@ impl Pong {
             ball,
             paddles: [paddle1, paddle2],
             score: [0, 0],
-            state: State::Play,
+            state: State::Serve,
         })
     }
 }
 
 impl EventHandler for Pong {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        // Update code here...
         while ggez::timer::check_update_time(ctx, 60) {
             match self.state {
                 State::Play => self.play_state(ctx)?,
-                _ => println!("Unknown stat")
+                _ => println!("Unknown stat"),
             }
         }
         Ok(())
@@ -82,16 +82,31 @@ impl EventHandler for Pong {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
-        // Draw code here...
         self.ball.draw(ctx)?;
         self.paddles[0].draw(ctx)?;
         self.paddles[1].draw(ctx)?;
         graphics::present(ctx)
     }
+
+    fn key_down_event(
+        &mut self,
+        _ctx: &mut Context,
+        keycode: ggez::event::KeyCode,
+        _keymods: ggez::event::KeyMods,
+        _repeat: bool,
+    )  {
+        match (self.state, keycode) {
+            (State::Serve, ggez::event::KeyCode::Space) => {
+                self.ball.serve();
+                self.state = State::Play;
+            }
+            _ => println!("Unknown Input"),
+        }
+    }
 }
 
 impl Pong {
-    fn handle_input(&mut self, ctx: &mut Context)-> GameResult {
+    fn handle_input(&mut self, ctx: &mut Context) -> GameResult {
         if ggez::input::keyboard::is_key_pressed(ctx, ggez::event::KeyCode::W) {
             self.paddles[0].vel.y = -PADDLE_MAX_VEL;
         } else if ggez::input::keyboard::is_key_pressed(ctx, ggez::event::KeyCode::S) {
@@ -108,14 +123,32 @@ impl Pong {
         }
         Ok(())
     }
+    fn handle_goal(&mut self) {
+        if self.ball.loc.x > WINDOW_WIDTH {
+            self.score[0] += 1;
+            self.ball.reset();
+            self.paddles[0].reset();
+            self.paddles[1].reset();
+            self.state = State::Serve;
+        }
+        if self.ball.loc.x < 0.{
+            self.score[1] += 1;
+            self.ball.reset();
+            self.paddles[0].reset();
+            self.paddles[1].reset();
+            self.state = State::Serve;
+        }
+    }
     fn play_state(&mut self, ctx: &mut Context) -> GameResult {
-            self.handle_input(ctx)?;
-            self.ball.collides_wall()?;
-            self.paddles[0].update()?;
-            self.paddles[1].update()?;
-            self.ball.collides_paddle(self.paddles[1])?;
-            self.ball.collides_paddle(self.paddles[0])?;
-            self.ball.update()?;
-            Ok(())
+        self.handle_input(ctx)?;
+        self.ball.collides_wall()?;
+        self.paddles[0].update()?;
+        self.paddles[1].update()?;
+        self.ball.collides_paddle(self.paddles[1])?;
+        self.ball.collides_paddle(self.paddles[0])?;
+        self.ball.update()?;
+        self.handle_goal();
+        println!("${:?}", self.score);
+        Ok(())
     }
 }

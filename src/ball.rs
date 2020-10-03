@@ -1,4 +1,4 @@
-use crate::{Paddle, BALL_SIZE, PADDLE_SIZE, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::{Paddle, BALL_SIZE, BALL_SPEED, PADDLE_SIZE, WINDOW_HEIGHT, WINDOW_WIDTH};
 use ggez::graphics::Mesh;
 use ggez::nalgebra::{Point2, Vector2};
 use ggez::{graphics, Context, GameError, GameResult};
@@ -16,9 +16,22 @@ impl Ball {
         println!("${:?}", rng.gen::<f32>());
         Ball {
             loc: Point2::new(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT / 2.0),
-            vel: Vector2::new(5.0, 0.0),
+            vel: Vector2::new(0.0, 0.0),
             rng,
         }
+    }
+    pub fn reset(&mut self) -> GameResult {
+        self.loc = Point2::new(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT / 2.0);
+        self.vel = Vector2::new(0.0, 0.0);
+        Ok(())
+    }
+    pub fn serve(&mut self) {
+        self.vel.x = if self.rng.gen::<f32>() > 0.5 {
+            -BALL_SPEED
+        } else {
+            BALL_SPEED
+        };
+        self.vel.y = self.rng.gen_range(-BALL_SPEED/2., BALL_SPEED/2.);
     }
     pub fn draw(&self, ctx: &mut Context) -> GameResult<()> {
         let circle = Mesh::new_circle(
@@ -53,7 +66,7 @@ impl Ball {
                 || paddle.loc.y > self.loc.y + BALL_SIZE)
         {
             self.vel.y = if self.vel.y > 0.0 {
-                self.rng.gen_range(1.,5.)
+                self.rng.gen_range(1., 5.)
             } else {
                 -self.rng.gen_range(1., 5.)
             };
