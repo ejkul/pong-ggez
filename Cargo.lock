@@ -1186,14 +1186,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nature"
-version = "0.1.0"
-dependencies = [
- "ggez",
- "rand 0.5.6",
-]
-
-[[package]]
 name = "nix"
 version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1413,6 +1405,14 @@ dependencies = [
  "crc32fast",
  "deflate",
  "inflate",
+]
+
+[[package]]
+name = "pong"
+version = "0.1.0"
+dependencies = [
+ "ggez",
+ "rand 0.5.6",
 ]
 
 [[package]]

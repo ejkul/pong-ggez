@@ -28,6 +28,12 @@ fn main() {
     }
 }
 
+pub enum State {
+    Serve,
+    Play,
+    Won
+}
+
 struct Pong {
     // Your state here...
     ball: Ball,
