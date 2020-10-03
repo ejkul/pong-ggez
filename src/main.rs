@@ -1,4 +1,6 @@
+use ::std::path;
 use ggez::event::{self, EventHandler};
+use ggez::nalgebra as na;
 use ggez::{graphics, Context, ContextBuilder, GameError, GameResult};
 
 mod ball;
@@ -13,11 +15,15 @@ pub const BALL_SIZE: f32 = 10.0;
 pub const BALL_SPEED: f32 = 5.;
 pub const PADDLE_SIZE: [f32; 2] = [20.0, 60.0];
 pub const PADDLE_ACC: f32 = 5.0;
-pub const PADDLE_MAX_VEL: f32 = 5.0;
+pub const PADDLE_MAX_VEL: f32 = 10.0;
 
 fn main() -> GameResult {
     // Make a Context.
+
+    let assets_path = path::PathBuf::from("../assets");
+
     let (mut ctx, mut event_loop) = ContextBuilder::new("Pong", "Andrzej")
+        .window_setup(ggez::conf::WindowSetup::default().title("Pong"))
         .window_mode(ggez::conf::WindowMode::default().dimensions(WINDOW_WIDTH, WINDOW_HEIGHT))
         .build()
         .expect("aieee, could not create ggez context!");
@@ -46,16 +52,28 @@ pub enum State {
     Won,
 }
 
+const FONT: [u8; 13652] = *include_bytes!("../assets/font/square.ttf");
+
 struct Pong {
     // Your state here...
     ball: Ball,
     paddles: [Paddle; 2],
     score: [u32; 2],
     state: State,
+    scoreboard: [graphics::Text; 2],
+}
+
+fn parse_score(ctx: &mut Context, num: u32) -> GameResult<graphics::Text> {
+    Ok(graphics::Text::new(
+        graphics::TextFragment::new(String::from(num.to_string()))
+            .color(graphics::BLACK)
+            .scale(graphics::Scale::uniform(30.0))
+            .font(graphics::Font::new_glyph_font_bytes(ctx, &FONT)?),
+    ))
 }
 
 impl Pong {
-    pub fn new(_ctx: &mut Context) -> GameResult<Pong> {
+    pub fn new(ctx: &mut Context) -> GameResult<Pong> {
         // Load/create resources such as images here.
         let ball = Ball::new();
         let paddle1 = Paddle::new(Side::Left)?;
@@ -65,6 +83,7 @@ impl Pong {
             paddles: [paddle1, paddle2],
             score: [0, 0],
             state: State::Serve,
+            scoreboard: [parse_score(ctx, 0)?, parse_score(ctx, 0)?],
         })
     }
 }
@@ -74,7 +93,7 @@ impl EventHandler for Pong {
         while ggez::timer::check_update_time(ctx, 60) {
             match self.state {
                 State::Play => self.play_state(ctx)?,
-                _ => println!("Unknown stat"),
+                _ => (),
             }
         }
         Ok(())
@@ -85,6 +104,12 @@ impl EventHandler for Pong {
         self.ball.draw(ctx)?;
         self.paddles[0].draw(ctx)?;
         self.paddles[1].draw(ctx)?;
+        graphics::draw(ctx, &self.scoreboard[0], (na::Point2::new(30.0, 30.0),))?;
+        graphics::draw(
+            ctx,
+            &self.scoreboard[1],
+            (na::Point2::new(WINDOW_WIDTH - 30.0, 30.0),),
+        )?;
         graphics::present(ctx)
     }
 
@@ -94,7 +119,7 @@ impl EventHandler for Pong {
         keycode: ggez::event::KeyCode,
         _keymods: ggez::event::KeyMods,
         _repeat: bool,
-    )  {
+    ) {
         match (self.state, keycode) {
             (State::Serve, ggez::event::KeyCode::Space) => {
                 self.ball.serve();
@@ -123,21 +148,25 @@ impl Pong {
         }
         Ok(())
     }
-    fn handle_goal(&mut self) {
+    fn reset(&mut self) -> GameResult{
+        self.ball.reset()?;
+        self.paddles[0].reset();
+        self.paddles[1].reset();
+        self.state = State::Serve;
+        Ok(())
+    }
+    fn handle_goal(&mut self, ctx:  &mut Context) -> GameResult {
         if self.ball.loc.x > WINDOW_WIDTH {
             self.score[0] += 1;
-            self.ball.reset();
-            self.paddles[0].reset();
-            self.paddles[1].reset();
-            self.state = State::Serve;
+            self.scoreboard[0] = parse_score(ctx, self.score[0])?;
+            self.reset()?;
         }
-        if self.ball.loc.x < 0.{
+        if self.ball.loc.x < 0. {
             self.score[1] += 1;
-            self.ball.reset();
-            self.paddles[0].reset();
-            self.paddles[1].reset();
-            self.state = State::Serve;
+            self.scoreboard[1] = parse_score(ctx, self.score[1])?;
+            self.reset()?;
         }
+        Ok(())
     }
     fn play_state(&mut self, ctx: &mut Context) -> GameResult {
         self.handle_input(ctx)?;
@@ -147,7 +176,7 @@ impl Pong {
         self.ball.collides_paddle(self.paddles[1])?;
         self.ball.collides_paddle(self.paddles[0])?;
         self.ball.update()?;
-        self.handle_goal();
+        self.handle_goal(ctx)?;
         println!("${:?}", self.score);
         Ok(())
     }
