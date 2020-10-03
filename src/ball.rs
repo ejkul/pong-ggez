@@ -52,12 +52,17 @@ impl Ball {
             && !(self.loc.y > paddle.loc.y + PADDLE_SIZE[1]
                 || paddle.loc.y > self.loc.y + BALL_SIZE)
         {
-            self.vel.x *= -1.05;
             self.vel.y = if self.vel.y > 0.0 {
                 self.rng.gen_range(1.,5.)
             } else {
                 -self.rng.gen_range(1., 5.)
-            }
+            };
+            self.loc.x = if self.vel.x > 0.0 {
+                paddle.loc.x - 5.
+            } else {
+                paddle.loc.x + PADDLE_SIZE[0] + 5.
+            };
+            self.vel.x *= -1.05;
         }
         Ok(())
     }
