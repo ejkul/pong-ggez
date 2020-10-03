@@ -16,6 +16,7 @@ pub const BALL_SPEED: f32 = 5.;
 pub const PADDLE_SIZE: [f32; 2] = [20.0, 60.0];
 pub const PADDLE_ACC: f32 = 5.0;
 pub const PADDLE_MAX_VEL: f32 = 10.0;
+pub const WIN_POINTS: u32 = 10;
 
 fn main() -> GameResult {
     // Make a Context.
@@ -49,7 +50,7 @@ fn main() -> GameResult {
 pub enum State {
     Serve,
     Play,
-    Won,
+    Win,
 }
 
 const FONT: [u8; 13652] = *include_bytes!("../assets/font/square.ttf");
@@ -68,6 +69,15 @@ fn parse_score(ctx: &mut Context, num: u32) -> GameResult<graphics::Text> {
         graphics::TextFragment::new(String::from(num.to_string()))
             .color(graphics::BLACK)
             .scale(graphics::Scale::uniform(30.0))
+            .font(graphics::Font::new_glyph_font_bytes(ctx, &FONT)?),
+    ))
+}
+
+fn win_text(ctx: &mut Context, text: &str) -> GameResult<graphics::Text> {
+    Ok(graphics::Text::new(
+        graphics::TextFragment::new(text)
+            .color(graphics::BLACK)
+            .scale(graphics::Scale::uniform(100.0))
             .font(graphics::Font::new_glyph_font_bytes(ctx, &FONT)?),
     ))
 }
@@ -110,6 +120,17 @@ impl EventHandler for Pong {
             &self.scoreboard[1],
             (na::Point2::new(WINDOW_WIDTH - 30.0, 30.0),),
         )?;
+        match self.state {
+            State::Win => {
+                let text: graphics::Text = win_text(ctx, "You Won")?;
+                graphics::draw(
+                    ctx,
+                    &text,
+                    (na::Point2::new(WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0),),
+                )?;
+            }
+            _ => (),
+        }
         graphics::present(ctx)
     }
 
@@ -148,14 +169,14 @@ impl Pong {
         }
         Ok(())
     }
-    fn reset(&mut self) -> GameResult{
+    fn reset(&mut self) -> GameResult {
         self.ball.reset()?;
         self.paddles[0].reset();
         self.paddles[1].reset();
         self.state = State::Serve;
         Ok(())
     }
-    fn handle_goal(&mut self, ctx:  &mut Context) -> GameResult {
+    fn handle_goal(&mut self, ctx: &mut Context) -> GameResult {
         if self.ball.loc.x > WINDOW_WIDTH {
             self.score[0] += 1;
             self.scoreboard[0] = parse_score(ctx, self.score[0])?;
@@ -166,8 +187,12 @@ impl Pong {
             self.scoreboard[1] = parse_score(ctx, self.score[1])?;
             self.reset()?;
         }
+        if (self.score[0] == WIN_POINTS || self.score[1] == WIN_POINTS) {
+            self.state = State::Win;
+        }
         Ok(())
     }
+
     fn play_state(&mut self, ctx: &mut Context) -> GameResult {
         self.handle_input(ctx)?;
         self.ball.collides_wall()?;
