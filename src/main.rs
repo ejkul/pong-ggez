@@ -49,6 +49,7 @@ struct Pong {
     // Your state here...
     ball: Ball,
     paddles: [Paddle; 2],
+    score: [u32; 2],
 }
 
 impl Pong {
@@ -60,19 +61,40 @@ impl Pong {
         Ok(Pong {
             ball,
             paddles: [paddle1, paddle2],
+            score: [0, 0],
         })
+    }
+}
+
+fn handle_input(paddles: &mut [Paddle; 2], ctx: &mut Context) {
+    if ggez::input::keyboard::is_key_pressed(ctx, ggez::event::KeyCode::W) {
+        paddles[0].vel.y = -PADDLE_MAX_VEL;
+    } else if ggez::input::keyboard::is_key_pressed(ctx, ggez::event::KeyCode::S) {
+        paddles[0].vel.y = PADDLE_MAX_VEL;
+    } else {
+        paddles[0].vel.y = 0.;
+    }
+    if ggez::input::keyboard::is_key_pressed(ctx, ggez::event::KeyCode::Up) {
+        paddles[1].vel.y = -PADDLE_MAX_VEL;
+    } else if ggez::input::keyboard::is_key_pressed(ctx, ggez::event::KeyCode::Down) {
+        paddles[1].vel.y = PADDLE_MAX_VEL;
+    } else {
+        paddles[1].vel.y = 0.;
     }
 }
 
 impl EventHandler for Pong {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         // Update code here...
-        self.ball.collides_wall()?;
-        self.ball.collides_paddle(self.paddles[1])?;
-        self.ball.collides_paddle(self.paddles[0])?;
-        self.ball.update()?;
-        self.paddles[0].update()?;
-        self.paddles[1].update()?;
+        while ggez::timer::check_update_time(ctx, 60) {
+            handle_input(&mut self.paddles, ctx);
+            self.ball.collides_wall()?;
+            self.paddles[0].update()?;
+            self.paddles[1].update()?;
+            self.ball.collides_paddle(self.paddles[1])?;
+            self.ball.collides_paddle(self.paddles[0])?;
+            self.ball.update()?;
+        }
         Ok(())
     }
 
@@ -83,56 +105,5 @@ impl EventHandler for Pong {
         self.paddles[0].draw(ctx)?;
         self.paddles[1].draw(ctx)?;
         graphics::present(ctx)
-    }
-    fn key_down_event(
-        &mut self,
-        ctx: &mut Context,
-        keycode: ggez::event::KeyCode,
-        _keymods: ggez::event::KeyMods,
-        repeat: bool,
-    ) {
-        if !repeat {
-            match keycode {
-                ggez::event::KeyCode::W => {
-                    self.paddles[0].vel.y = std::cmp::min(
-                        (self.paddles[0].vel.y - PADDLE_ACC) as i32,
-                        -PADDLE_MAX_VEL as i32,
-                    ) as f32
-                }
-                ggez::event::KeyCode::S => {
-                    self.paddles[0].vel.y = std::cmp::max(
-                        (self.paddles[0].vel.y + PADDLE_ACC) as i32,
-                        PADDLE_MAX_VEL as i32,
-                    ) as f32
-                }
-                ggez::event::KeyCode::Up => {
-                    self.paddles[1].vel.y = std::cmp::min(
-                        (self.paddles[1].vel.y - PADDLE_ACC) as i32,
-                        -PADDLE_MAX_VEL as i32,
-                    ) as f32
-                }
-                ggez::event::KeyCode::Down => {
-                    self.paddles[1].vel.y = std::cmp::max(
-                        (self.paddles[1].vel.y + PADDLE_ACC) as i32,
-                        PADDLE_MAX_VEL as i32,
-                    ) as f32
-                }
-                _ => (),
-            }
-        }
-    }
-    fn key_up_event(
-        &mut self,
-        ctx: &mut Context,
-        keycode: ggez::event::KeyCode,
-        _keymods: ggez::event::KeyMods,
-    ) {
-        match keycode {
-            ggez::event::KeyCode::W => self.paddles[0].vel.y = 0.0,
-            ggez::event::KeyCode::S => self.paddles[0].vel.y = 0.0,
-            ggez::event::KeyCode::Up => self.paddles[1].vel.y = 0.0,
-            ggez::event::KeyCode::Down => self.paddles[1].vel.y = 0.0,
-            _ => (),
-        }
     }
 }
