@@ -73,11 +73,11 @@ fn parse_score(ctx: &mut Context, num: u32) -> GameResult<graphics::Text> {
     ))
 }
 
-fn win_text(ctx: &mut Context, text: &str) -> GameResult<graphics::Text> {
+fn ui_text(ctx: &mut Context, text: &str, scale: f32) -> GameResult<graphics::Text> {
     Ok(graphics::Text::new(
         graphics::TextFragment::new(text)
             .color(graphics::BLACK)
-            .scale(graphics::Scale::uniform(100.0))
+            .scale(graphics::Scale::uniform(scale))
             .font(graphics::Font::new_glyph_font_bytes(ctx, &FONT)?),
     ))
 }
@@ -122,11 +122,28 @@ impl EventHandler for Pong {
         )?;
         match self.state {
             State::Win => {
-                let text: graphics::Text = win_text(ctx, "You Won")?;
+                let won: &str = if self.score[0] > self.score[1] { "Player 1"} else {"Player 2"};
+                let text: graphics::Text = ui_text(ctx, &(won.to_owned() + " Won"), 100.0)?;
+                let text_dim: (u32, u32) = text.dimensions(ctx);
                 graphics::draw(
                     ctx,
                     &text,
-                    (na::Point2::new(WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0),),
+                    (na::Point2::new(
+                        WINDOW_WIDTH / 2.0 - text_dim.0 as f32 / 2.0,
+                        WINDOW_HEIGHT / 2.0 - text_dim.1 as f32 * 2.0,
+                    ),),
+                )?;
+            }
+            State::Serve => {
+                let text: graphics::Text = ui_text(ctx, "Press Space to serve", 50.0)?;
+                let text_dim: (u32, u32) = text.dimensions(ctx);
+                graphics::draw(
+                    ctx,
+                    &text,
+                    (na::Point2::new(
+                        WINDOW_WIDTH / 2.0 - text_dim.0 as f32 / 2.0,
+                        WINDOW_HEIGHT / 2.0 + text_dim.1 as f32 * 2.0,
+                    ),),
                 )?;
             }
             _ => (),
@@ -146,7 +163,14 @@ impl EventHandler for Pong {
                 self.ball.serve();
                 self.state = State::Play;
             }
-            _ => println!("Unknown Input"),
+            (State::Win, ggez::event::KeyCode::Space) => {
+                match self.reset() {
+                    Ok(_) => (),
+                    Err(_) => (),
+                };
+                self.state = State::Serve;
+            }
+            _ => (),
         }
     }
 }
@@ -187,7 +211,7 @@ impl Pong {
             self.scoreboard[1] = parse_score(ctx, self.score[1])?;
             self.reset()?;
         }
-        if (self.score[0] == WIN_POINTS || self.score[1] == WIN_POINTS) {
+        if self.score[0] == WIN_POINTS || self.score[1] == WIN_POINTS {
             self.state = State::Win;
         }
         Ok(())
